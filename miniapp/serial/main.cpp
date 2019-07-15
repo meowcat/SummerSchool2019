@@ -114,7 +114,7 @@ int main(int argc, char* argv[])
     double tolerance     = 1.e-6;
 
     std::cout << "========================================================================" << std::endl;
-    std::cout << "                      Welcome to meowcat-stencil!" << std::endl;
+    std::cout << "                      Welcome to meowcat-stencil 2019!" << std::endl;
     std::cout << "version   :: C++ serial" << std::endl;
     std::cout << "mesh      :: " << options.nx << " * " << options.ny << " dx = " << options.dx << std::endl;
     std::cout << "time      :: " << nt << " time steps from 0 .. " << options.nt*options.dt << std::endl;;
