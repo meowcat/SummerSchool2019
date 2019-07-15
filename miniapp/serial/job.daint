@@ -3,9 +3,11 @@
 #SBATCH --job-name="summer-school-serial"
 #SBATCH --nodes=1
 #SBATCH --output=job%j.out
-#SBATCH --reservation=course
-#SBATCH --time=00:02:00
+#SBATCH --reservation=summer_school
 #SBATCH --constraint=gpu
 
-srun ./main 256 256 200 0.01 yes
+srun ./main 128 128 100 0.01
+srun ./main 256 256 200 0.01
+srun ./main 512 512 200 0.01
+srun ./main 1024 1024 400 0.01
 
