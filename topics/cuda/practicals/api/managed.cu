@@ -29,7 +29,7 @@ int main(int argc, char** argv) {
     auto cublas_status =
         cublasDaxpy(cublas_handle, n, &alpha, x, 1, y, 1);
     cublas_check_status(cublas_status);
-
+    cudaDeviceSynchronize();
     // stop the timer
     auto time_taken = get_time() - start;
 
