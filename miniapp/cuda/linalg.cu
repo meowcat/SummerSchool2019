@@ -75,6 +75,35 @@ void axpy(
     }
 }
 
+__global__
+void scale(
+        double *y,
+        const double alpha,
+        const double *x,
+        const int n)
+{
+    auto i = threadIdx.x + blockDim.x*blockIdx.x;
+    if(i < n) {
+        y[i] = alpha * x[i];
+    }
+}
+
+
+__global__
+void lcomb(
+        double *y,
+        const double alpha,
+        const double *x,
+		const double beta,
+        const double *z,
+        const int n)
+{
+    auto i = threadIdx.x + blockDim.x*blockIdx.x;
+    if(i < n) {
+        y[i] = alpha * x[i] + beta * z[i];
+    }
+}
+
 
 } // namespace kernels
 
@@ -234,6 +263,12 @@ void ss_scaled_diff(Field& y, const double alpha, Field const& l, Field const& r
 // y and x are vectors
 void ss_scale(Field& y, const double alpha, Field& x)
 {
+	const int n = y.length();
+	auto grid_dim = calculate_grid_dim(block_dim, n);
+
+	kernels::scale<<<grid_dim, block_dim>>>
+			(y.device_data(), alpha, x.device_data(), n);
+
 }
 
 // computes linear combination of two vectors y := alpha*x + beta*z
@@ -241,6 +276,12 @@ void ss_scale(Field& y, const double alpha, Field& x)
 // y, x and z are vectors
 void ss_lcomb(Field& y, const double alpha, Field& x, const double beta, Field const& z)
 {
+	const int n = y.length();
+	auto grid_dim = calculate_grid_dim(block_dim, n);
+
+	kernels::lcomb<<<grid_dim, block_dim>>>
+			(y.device_data(), alpha, x.device_data(), beta, z.device_data(), n);
+
 }
 
 // conjugate gradient solver
