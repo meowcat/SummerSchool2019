@@ -48,24 +48,31 @@ void fill(double *x, const double value, int n) {
 }
 
 __global__
-void dot(const double *x, const double* y, double *result, int n) {
-	extern __shared__ double buffer[];
-	auto i = threadIdx.x + blockIdx.x * blockDim.x;
-	auto t = threadIdx.x;
-	buffer[t] = 0;
-	if(i < n)
-		buffer[t] = x[i] * y[i];
-	int m = blockDim.x;
-	m = m / 2;
-	while(m > 0) {
-		__syncthreads();
-		if(t < m)
-			buffer[t] += buffer[t+m];
-		m = m / 2;
-	}
-	if(t == 0)
-		atomicAdd(result, buffer[0]);
+void scaled_diff(
+        double *y,
+        const double alpha,
+        const double *l,
+        const double *r,
+        const int n)
+{
+    auto i = threadIdx.x + blockDim.x*blockIdx.x;
+    if(i < n) {
+        y[i] = alpha * (l[i] - r[i]);
+    }
+}
 
+
+__global__
+void axpy(
+        double *y,
+        const double alpha,
+        const double *x,
+        const int n)
+{
+    auto i = threadIdx.x + blockDim.x*blockIdx.x;
+    if(i < n) {
+        y[i] = alpha * x[i] + y[i];
+    }
 }
 
 
@@ -202,6 +209,12 @@ void ss_fill(Field& x, const double value)
 // alpha is a scalar
 void ss_axpy(Field& y, const double alpha, Field const& x)
 {
+	const int n = y.length();
+	auto grid_dim = calculate_grid_dim(block_dim, n);
+
+	kernels::axpy<<<grid_dim, block_dim>>>
+			(y.device_data(), alpha, x.device_data(), n);
+
 }
 
 // computes y = alpha*(l-r)
@@ -209,6 +222,11 @@ void ss_axpy(Field& y, const double alpha, Field const& x)
 // alpha is a scalar
 void ss_scaled_diff(Field& y, const double alpha, Field const& l, Field const& r)
 {
+	const int n = y.length();
+	auto grid_dim = calculate_grid_dim(block_dim, n);
+
+	kernels::scaled_diff<<<grid_dim, block_dim>>>
+			(y.device_data(), alpha, l.device_data(), r.device_data(), n);
 }
 
 // computes y := alpha*x
