@@ -40,11 +40,32 @@ void copy(double *y, const double* x, int n) {
 }
 
 __global__
-void fill(double *x, double value, int n) {
+void fill(double *x, const double value, int n) {
     auto i = threadIdx.x + blockDim.x*blockIdx.x;
     if(i < n) {
     	x[i] = value;
     }
+}
+
+__global__
+void dot(const double *x, const double* y, double *result, int n) {
+	extern __shared__ double buffer[];
+	auto i = threadIdx.x + blockIdx.x * blockDim.x;
+	auto t = threadIdx.x;
+	buffer[t] = 0;
+	if(i < n)
+		buffer[t] = x[i] * y[i];
+	int m = blockDim.x;
+	m = m / 2;
+	while(m > 0) {
+		__syncthreads();
+		if(t < m)
+			buffer[t] += buffer[t+m];
+		m = m / 2;
+	}
+	if(t == 0)
+		atomicAdd(result, buffer[0]);
+
 }
 
 
@@ -99,7 +120,12 @@ void cg_init(int nx, int ny)
 double ss_dot(Field const& x, Field const& y)
 {
     double result = 0.;
+
     const int n = x.length();
+    auto h = cublas_handle();
+    cublas_check_status(cublasDdot(h, n,
+    		x.device_data(), 1, y.device_data(), 1, &result));
+
 
     return result;
 }
@@ -112,7 +138,13 @@ double ss_dot(Field const& x, Field const& y)
 double ss_norm2(Field const& x)
 {
     double result = 0;
+
     const int n = x.length();
+    auto h = cublas_handle();
+    cublas_check_status(cublasDnrm2(h, n,
+    		x.device_data(), 1, &result));
+
+
 
     return result;
 }

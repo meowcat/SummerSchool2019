@@ -37,3 +37,13 @@ static inline cublasHandle_t& cublas_handle() {
 
     return cublas_handle;
 }
+
+
+
+static inline void cublas_check_status(cublasStatus_t status) {
+    if(status != CUBLAS_STATUS_SUCCESS) {
+        std::cerr << "error: CUBLAS API call\n";
+        exit(1);
+    }
+}
+
