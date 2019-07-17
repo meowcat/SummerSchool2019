@@ -22,12 +22,15 @@ void dot_gpu_kernel(const double *x, const double* y, double *result, int n) {
 	__shared__ double buffer[THREADS];
 	auto i = threadIdx.x;
 	buffer[i] = x[i] * y[i];
-	n /= 2;
-	while(n > 0) {
+	if(i >= n)
+		buffer[i] = 0;
+	int m = blockDim.x;
+	m = m / 2;
+	while(m > 0) {
 		__syncthreads();
-		if(i < n)
-			buffer[i] += buffer[i+n];
-		n /= 2;
+		if(i < m)
+			buffer[i] += buffer[i+m];
+		m = m / 2;
 	}
 	if(i == 0)
 		*result = buffer[0];
@@ -43,8 +46,8 @@ double dot_gpu(const double *x, const double* y, int n) {
 }
 
 int main(int argc, char** argv) {
-    size_t pow = read_arg(argc, argv, 1, 4);
-    size_t n = (1 << pow);
+    size_t n = read_arg(argc, argv, 1, 4);
+    //size_t n = (1 << pow);
 
     auto size_in_bytes = n * sizeof(double);
 
