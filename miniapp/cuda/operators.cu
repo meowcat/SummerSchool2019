@@ -29,6 +29,8 @@ struct DiffusionParams {
 };
 
 // TODO : explain what the params variable and setup_params_on_device() do
+// In my understanding, it makes the parameters available directly on the device,
+// such that not every call needs to transfer them again
 __device__
 DiffusionParams params;
 
@@ -61,6 +63,31 @@ namespace kernels {
         //                          + U(i,j-1) + U(i,j+1) // north and south
         //                          + alpha * x_old(i,j)
         //                          + dxs * U(i,j) * (1.0 - U(i,j));
+//    	stencil_interior<<<interior_grid_dim, interior_block_dim>>>(
+//    	    		S.device_data(), U.device_data()
+
+    	// calculate position
+    	auto i = threadIdx.x + blockIdx.x * blockDim.x;
+    	auto j = threadIdx.y + blockIdx.y * blockDim.y;
+    	// fetch params
+    	auto nx = params.nx;
+        auto ny = params.ny;
+        auto alpha = params.alpha;
+        auto dxs = params.dxs;
+
+        auto find_pos = [&nx] (size_t i, size_t j) {
+                 return i + j * nx;
+             };
+
+
+    	// process
+    	if(i<nx && j<ny && i>0 && j>0) {
+            auto pos = find_pos(i, j);
+            S[pos] = -(4. + alpha) * U[pos]
+                                    + U[pos-1] + U[pos-nx] + U[pos+nx] + U[pos+1]
+                                    + alpha*params.x_old[pos]
+                                    + dxs * U[pos] * (1.0 - U[pos]);
+    	}
     }
 
     __global__
@@ -86,6 +113,12 @@ namespace kernels {
 
             // TODO : do the stencil on the WEST side
             // WEST : i = 0
+            pos = find_pos(0, j);
+            S[pos] = -(4. + alpha) * U[pos]
+                        + U[pos+1] + U[pos-nx] + U[pos+nx]
+                        + alpha*params.x_old[pos] + params.bndW[j]
+                        + dxs * U[pos] * (1.0 - U[pos]);
+
         }
     }
 
@@ -108,6 +141,11 @@ namespace kernels {
 
             // TODO : do the stencil on the SOUTH side
             // SOUTH : j = 0
+            pos = i;
+			S[pos] = -(4. + alpha) * U[pos]
+						+ U[pos-1] + U[pos+1] + U[pos+nx]
+						+ alpha*params.x_old[pos] + params.bndS[i]
+						+ dxs * U[pos] * (1.0 - U[pos]);
         }
     }
 
@@ -193,11 +231,18 @@ void diffusion(data::Field const& U, data::Field &S)
 
     // apply stencil to the interior grid points
     // TODO: what is the purpose of the following?
+    // It calculates the grid dimensions (number of blocks) for the required xy dimenions
     auto calculate_grid_dim = [] (size_t n, size_t block_dim) {
         return (n+block_dim-1)/block_dim;
     };
 
     // TODO: apply stencil to the interior grid points
+    dim3 interior_grid_dim(
+    		calculate_grid_dim(nx, 1),
+			calculate_grid_dim(ny, 1));
+    dim3 interior_block_dim(1, 1);
+    kernels::stencil_interior<<<interior_grid_dim, interior_block_dim>>>(
+    		S.device_data(), U.device_data());
 
     cudaDeviceSynchronize();    // TODO: remove after debugging
     cuda_check_last_kernel("internal kernel"); // TODO: remove after debugging
