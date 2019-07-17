@@ -14,6 +14,17 @@ void reverse_string(char* str, int n) {
 	str[i] = str_out[i];
 }
 
+__global__
+void reverse_string_inpl(char* str, int n) {
+	auto i = threadIdx.x;
+	char swap;
+	if(i < n/2) {
+		swap = str[i];
+		str[i] = str[n-i-1];
+		str[n-i-1] = swap;
+	}
+}
+
 
 
 
@@ -37,6 +48,13 @@ int main(int argc, char** argv) {
     // print reversed string
     cudaDeviceSynchronize();
     std::cout << "reversed string:\n" << string << "\n";
+
+    reverse_string_inpl<<<1, n>>>(string, n);
+    // print reversed string
+    cudaDeviceSynchronize();
+    std::cout << "re-reversed string:\n" << string << "\n";
+
+
 
     // free memory
     cudaFree(string);
