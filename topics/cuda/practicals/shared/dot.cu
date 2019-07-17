@@ -15,31 +15,35 @@ double dot_host(const double *x, const double* y, int n) {
 
 // TODO implement dot product kernel
 
-template <int THREADS>
 __global__
 void dot_gpu_kernel(const double *x, const double* y, double *result, int n) {
 	// log n steps
-	__shared__ double buffer[THREADS];
-	auto i = threadIdx.x;
-	buffer[i] = x[i] * y[i];
-	if(i >= n)
-		buffer[i] = 0;
+	extern __shared__ double buffer[];
+	auto i = threadIdx.x + blockIdx.x * blockDim.x;
+	auto t = threadIdx.x;
+	buffer[t] = 0;
+	if(i < n)
+		buffer[t] = x[i] * y[i];
 	int m = blockDim.x;
 	m = m / 2;
 	while(m > 0) {
 		__syncthreads();
-		if(i < m)
-			buffer[i] += buffer[i+m];
+		if(t < m)
+			buffer[t] += buffer[t+m];
 		m = m / 2;
 	}
-	if(i == 0)
-		*result = buffer[0];
+	if(t == 0)
+		atomicAdd(result, buffer[0]);
+
 }
 
 double dot_gpu(const double *x, const double* y, int n) {
     static double* result = malloc_managed<double>(1);
     // TODO call dot product kernel
-    dot_gpu_kernel<1024><<<1, 1024>>>(x, y, result, n);
+    int block_dim = 1024;
+    int block_count = (n+ block_dim - 1) / block_dim;
+    *result = 0;
+    dot_gpu_kernel<<<block_count, block_dim, block_dim * sizeof(double)>>>(x, y, result, n);
 
     cudaDeviceSynchronize();
     return *result;
