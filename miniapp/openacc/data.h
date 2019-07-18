@@ -29,7 +29,9 @@ class Field {
     :   xdim_(0),
         ydim_(0),
         ptr_(nullptr)
-    {};
+    {
+		#pragma acc enter data create(this)
+    };
 
     // constructor
     Field(int xdim, int ydim)
@@ -37,12 +39,14 @@ class Field {
         ydim_(ydim),
         ptr_(nullptr)
     {
+		#pragma acc enter data create(this)
         init(xdim, ydim);
     };
 
     // destructor
     ~Field() {
         free();
+		#pragma acc exit data delete(this)
     }
 
     void init(int xdim, int ydim) {
@@ -104,12 +108,12 @@ class Field {
     /////////////////////////////////////////////////
     void update_host() {
         // xTODO: Update the host copy of the data
-		#pragma acc update host(ptr_)
+		#pragma acc update host(ptr_,this)
     }
 
     void update_device() {
         // xTODO: Update the device copy of the data
-		#pragma acc update device(ptr_)
+		#pragma acc update device(ptr_,this)
     }
 
     private:
@@ -118,8 +122,8 @@ class Field {
         xdim_ = xdim;
         ydim_ = ydim;
         ptr_ = new double[xdim*ydim];
-		#pragma enter data copyin(ptr_[:xdim*ydim])
-		#pragma enter data copyin(this)
+		#pragma acc enter data copyin(ptr_[:xdim*ydim])
+		#pragma acc update device(this)
         // xTODO: Copy the whole object to the GPU.
         //       Pay attention to the order of the copies so that the data
         //       pointed to by `ptr_` is properly attached to the GPU's copy of
@@ -142,7 +146,7 @@ class Field {
     void free() {
         if (ptr_) {
             // xTODO: Delete the copy of this object from the GPU
-			#pragma exit data delete(ptr_[:xdim*ydim],this)
+			#pragma acc exit data delete(ptr_[:xdim_*ydim_])
             // NOTE: You will see some OpenACC runtime errors when your program exits
             //       This is a problem with the PGI runtime; you may ignore them.
             delete[] ptr_;
