@@ -215,13 +215,13 @@ bool test_norm2() {
 // main
 ////////////////////////////////////////////////////////////////////////////////
 int main(void) {
-    //run_test(test_dot,          "ss_dot");
-    //run_test(test_norm2,        "ss_norm2");
-    //run_test(test_scaled_diff,  "ss_scaled_diff");
+    run_test(test_dot,          "ss_dot");
+    run_test(test_norm2,        "ss_norm2");
+    run_test(test_scaled_diff,  "ss_scaled_diff");
     run_test(test_fill,         "ss_fill");
-//    run_test(test_axpy,         "ss_axpy");
-//    run_test(test_add_scaled_diff, "ss_add_scaled_diff");
-//    run_test(test_scale,        "ss_scale");
-//    run_test(test_lcomb,        "ss_lcomb");
-//    run_test(test_copy,         "ss_copy");
+    run_test(test_axpy,         "ss_axpy");
+    run_test(test_add_scaled_diff, "ss_add_scaled_diff");
+    run_test(test_scale,        "ss_scale");
+    run_test(test_lcomb,        "ss_lcomb");
+    run_test(test_copy,         "ss_copy");
 }
