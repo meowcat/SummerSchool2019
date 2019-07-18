@@ -17,7 +17,6 @@ void axpy_gpu(int n, double alpha, const double *x, double* y) {
 
     #pragma acc kernels
 	int i;
-	#pragma acc loop
     for(i = 0; i < n; ++i) {
         y[i] += alpha*x[i];
     }
