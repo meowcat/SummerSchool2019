@@ -3,5 +3,6 @@ main
 *.bin
 *.bov
 *.png
-
+.*
 unit_tests
+. .. .cproject .project
