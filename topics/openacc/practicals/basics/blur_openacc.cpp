@@ -10,6 +10,8 @@
 // TODO: Annotate the following function accordingly in order to be called from
 //       an OpenACC kernel context
 #endif
+
+#pragma acc routine
 double blur(int pos, const double *u)
 {
     return 0.25*(u[pos-1] + 2.0*u[pos] + u[pos+1]);
@@ -51,12 +53,12 @@ void blur_twice_gpu_naive(double *in , double *out , int n, int nsteps)
     double *buffer = malloc_host<double>(n);
 
     for (auto istep = 0; istep < nsteps; ++istep) {
-        // TODO: Offload the following loop to the GPU
+		#pragma acc parallel loop
         for (auto i = 1; i < n-1; ++i) {
             buffer[i] = blur(i, in);
         }
 
-        // TODO: Offload the following loop to the GPU
+		#pragma acc parallel loop
         for (auto i = 2; i < n-2; ++i) {
             out[i] = blur(i, buffer);
         }
@@ -72,23 +74,24 @@ void blur_twice_gpu_nocopies(double *in , double *out , int n, int nsteps)
     double *buffer = malloc_host<double>(n);
 
     // TODO: Specify the data to be copied to and from the GPU
+	#pragma acc data copyin(in[:n]), create(buffer[:n]), copy(out[:n])
     {
         for (int istep = 0; istep < nsteps; ++istep) {
-            int i;
 
-            // TODO: Offload the following loop to the GPU
-            for (i = 1; i < n-1; ++i) {
+            #pragma acc parallel loop
+            for (int i = 1; i < n-1; ++i) {
                 buffer[i] = blur(i, in);
             }
 
-            // TODO: Offload the following loop to the GPU
-            for (i = 2; i < n-2; ++i) {
+			#pragma acc parallel loop
+            for (int i = 2; i < n-2; ++i) {
                 out[i] = blur(i, buffer);
             }
 
             // TODO: Offload the following loop to the GPU
             //       Is it possible to just swap the pointers here?
-            for (i = 0; i < n; ++i) {
+			#pragma acc parallel loop
+            for (int i = 0; i < n; ++i) {
                 in[i] = out[i];
             }
         }
