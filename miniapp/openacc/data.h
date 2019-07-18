@@ -30,7 +30,7 @@ class Field {
         ydim_(0),
         ptr_(nullptr)
     {
-		#pragma acc enter data create(this)
+		#pragma acc enter data copyin(this)
     };
 
     // constructor
@@ -39,7 +39,7 @@ class Field {
         ydim_(ydim),
         ptr_(nullptr)
     {
-		#pragma acc enter data create(this)
+		#pragma acc enter data copyin(this)
         init(xdim, ydim);
     };
 
@@ -99,8 +99,11 @@ class Field {
         return ptr_[i];
     }
 
+	#pragma acc routine
     int xdim()   const { return xdim_; }
+	#pragma acc routine
     int ydim()   const { return ydim_; }
+	#pragma acc routine
     int length() const { return xdim_*ydim_; }
 
     /////////////////////////////////////////////////
@@ -108,12 +111,12 @@ class Field {
     /////////////////////////////////////////////////
     void update_host() {
         // xTODO: Update the host copy of the data
-		#pragma acc update host(ptr_,this)
+		#pragma acc update host(ptr_[:xdim_*ydim_])
     }
 
     void update_device() {
         // xTODO: Update the device copy of the data
-		#pragma acc update device(ptr_,this)
+		#pragma acc update device(ptr_[:xdim_*ydim_])
     }
 
     private:
@@ -122,9 +125,9 @@ class Field {
         xdim_ = xdim;
         ydim_ = ydim;
         ptr_ = new double[xdim*ydim];
-		#pragma acc enter data copyin(ptr_[:xdim*ydim])
 		#pragma acc update device(this)
-        // xTODO: Copy the whole object to the GPU.
+		#pragma acc enter data copyin(ptr_[:xdim*ydim])
+		// xTODO: Copy the whole object to the GPU.
         //       Pay attention to the order of the copies so that the data
         //       pointed to by `ptr_` is properly attached to the GPU's copy of
         //       this object.

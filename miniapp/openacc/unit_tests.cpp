@@ -54,7 +54,10 @@ bool test_fill() {
         x[i] = 3.0;
     }
     x.update_device();
-
+    // To check where the problem is:
+    for(auto i=0; i<n; ++i) {
+            x[i] = 1.0;
+        }
     linalg::ss_fill(x, 2.0);
     x.update_host();
 
@@ -212,13 +215,13 @@ bool test_norm2() {
 // main
 ////////////////////////////////////////////////////////////////////////////////
 int main(void) {
-    run_test(test_dot,          "ss_dot");
-    run_test(test_norm2,        "ss_norm2");
-    run_test(test_scaled_diff,  "ss_scaled_diff");
+    //run_test(test_dot,          "ss_dot");
+    //run_test(test_norm2,        "ss_norm2");
+    //run_test(test_scaled_diff,  "ss_scaled_diff");
     run_test(test_fill,         "ss_fill");
-    run_test(test_axpy,         "ss_axpy");
-    run_test(test_add_scaled_diff, "ss_add_scaled_diff");
-    run_test(test_scale,        "ss_scale");
-    run_test(test_lcomb,        "ss_lcomb");
-    run_test(test_copy,         "ss_copy");
+//    run_test(test_axpy,         "ss_axpy");
+//    run_test(test_add_scaled_diff, "ss_add_scaled_diff");
+//    run_test(test_scale,        "ss_scale");
+//    run_test(test_lcomb,        "ss_lcomb");
+//    run_test(test_copy,         "ss_copy");
 }
