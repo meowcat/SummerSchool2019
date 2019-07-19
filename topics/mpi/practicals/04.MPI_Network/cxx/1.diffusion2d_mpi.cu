@@ -127,6 +127,25 @@ int main(int argc, char** argv) {
         // x0(:, ny-2) -> north
         if (use_rdma) {
             // TODO: fill in g2g communication
+            if (mpi_rank>0) {
+                 //copy_to_host(x0+nx, send_buffer, nx);
+                 MPI_Sendrecv(x0+nx, nx, MPI_DOUBLE,
+                            mpi_rank-1, 0,
+                            x0, nx, MPI_DOUBLE,
+                            mpi_rank-1, 1,
+                            MPI_COMM_WORLD, &status_south);
+                 //copy_to_device(recv_buffer, x0, nx);
+            }
+            if (mpi_rank<mpi_size-1) {
+                 //copy_to_host(x0+(ny-2)*nx, send_buffer, nx);
+                 MPI_Sendrecv(x0+(ny-2)*nx, nx, MPI_DOUBLE,
+                            mpi_rank+1, 1,
+                            x0+(ny-1)*nx, nx, MPI_DOUBLE,
+                            mpi_rank+1, 0,
+                            MPI_COMM_WORLD, &status_north);
+                 //copy_to_device(recv_buffer, x0+(ny-1)*nx, nx);
+            }
+
         }
         else {
             if (mpi_rank>0) {
