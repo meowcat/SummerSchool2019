@@ -28,6 +28,9 @@ int main(int argc, char *argv[])
      * with the operation sum (max, logical and)
      */
 
+    MPI_Reduce(&input, &result, 1, MPI_INTEGER,
+    		MPI_SUM, 0, MPI_COMM_WORLD);
+
     if (rank==0)
         printf("Rank 0 says: result is %i\n", result);
     MPI_Finalize();
