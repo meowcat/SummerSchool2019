@@ -19,15 +19,20 @@
 int main(int argc, char *argv[])
 {
     /* declare any variables you need */
+	int nrank, ncomm;
 
     MPI_Init(&argc, &argv);
 
     /* Get the rank of each process */
-
+	MPI_Comm_rank(MPI_COMM_WORLD, &nrank);
     /* Get the size of the communicator */
-
+	MPI_Comm_size(MPI_COMM_WORLD, &ncomm);
     /* Write code such that every process writes its rank and the size of the communicator,
      * but only process 0 prints "hello world*/
+	printf("rank %d, comm has %d", nrank, ncomm);
+	if(nrank == 0)
+		printf(" - hello world");
+	printf("\n");
 
     MPI_Finalize();
     return 0;

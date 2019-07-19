@@ -70,6 +70,9 @@ int main(int argc, char *argv[])
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
+    double sndbuf[DOMAINSIZE];
+    double rcvbuf[DOMAINSIZE];
+
     if (size!=16) {
         printf("please run this with 16 processors\n");
         MPI_Finalize();
@@ -80,14 +83,15 @@ int main(int argc, char *argv[])
         data[i]=rank;
     }
 
-    rank_bottom = -1;/* find the rank of the top neighbor */
-    rank_top = -1;/* find the rank of the bottom neighbor */
+    rank_bottom = (rank + 4) % 16;/* find the rank of the top neighbor */
+    rank_top = (rank - 4 + size) % 16;/* find the rank of the bottom neighbor */
 
 
     //  ghost cell exchange with the neighbouring cells (cyclic) to the bottom and to the top using:
     //  a) MPI_Send, MPI_Irecv, MPI_Wait
     //  b) MPI_Isend, MPI_Recv, MPI_Wait
     //  c) MPI_Sendrecv
+
 
     //  to the top
 
@@ -96,6 +100,33 @@ int main(int argc, char *argv[])
     // b)
 
     // c)
+
+    // Get data from top into sndbuf
+    for(i = 0; i < SUBDOMAIN; i++)
+    	sndbuf[i] = data[i+1];
+
+    MPI_Sendrecv(
+    		&sndbuf, SUBDOMAIN, MPI_DOUBLE, rank_top, 0,
+			&rcvbuf, SUBDOMAIN, MPI_DOUBLE, rank_bottom, 0,
+			MPI_COMM_WORLD,  &status
+    		);
+
+    // get data from btm into sndbuf, then replace data to top
+    for(i = 0; i < SUBDOMAIN; i++) {
+    	sndbuf[i] = data[i+1 + (SUBDOMAIN+2)*(SUBDOMAIN+1)];
+    	data[i+1 + (SUBDOMAIN+2)*(SUBDOMAIN+1)] = rcvbuf[i];
+    }
+
+    MPI_Sendrecv(
+        		&sndbuf, SUBDOMAIN, MPI_DOUBLE, rank_bottom, 0,
+    			&rcvbuf, SUBDOMAIN, MPI_DOUBLE, rank_top, 0,
+				MPI_COMM_WORLD,  &status
+        		);
+
+    // get data from btm into sndbuf, then replace data to top
+       for(i = 0; i < SUBDOMAIN; i++) {
+       	data[i+1] = rcvbuf[i];
+       }
 
     //  to the bottom
     // a)

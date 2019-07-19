@@ -40,6 +40,9 @@
 #define SUM_SIZE (1*1024)
 #define MAX_SIZE (1<<29) /* 512 MBytes */
 
+#define PING 1
+#define PONG 0
+
 int main(int argc, char *argv[])
 {
     int my_rank, k;
@@ -68,6 +71,16 @@ int main(int argc, char *argv[])
          * What do you observe? (plot it)
          */
         start = MPI_Wtime();
+        for(int i = 0; i < NMESSAGES; i++) {
+            if(my_rank == 1) {
+            	MPI_Send(buffer, length_of_message, MPI_CHAR, 0, PING, MPI_COMM_WORLD);
+            	MPI_Recv(buffer, length_of_message, MPI_CHAR, 0, PONG, MPI_COMM_WORLD, &status);
+            } else {
+
+            	MPI_Recv(buffer, length_of_message, MPI_CHAR, 1, PING, MPI_COMM_WORLD, &status);
+            	MPI_Send(buffer, length_of_message, MPI_CHAR, 1, PONG, MPI_COMM_WORLD);
+            }
+        }
 
         stop = MPI_Wtime();
         if (my_rank == 0) {

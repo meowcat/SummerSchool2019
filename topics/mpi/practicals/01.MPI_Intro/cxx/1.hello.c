@@ -16,15 +16,19 @@
 /* Write a minimal  MPI program which prints "hello world by each MPI process  */
 
 #include <stdio.h>
+#include <mpi.h>
 /* include mpi header file */
 
 int main(int argc, char *argv[])
 {
 
     /* initialize MPI */
+	MPI_Init(&argc, &argv);
 
     /* print hello world from each process */
+	printf("Hello world\n");
 
     /* finalize MPI */
+	MPI_Finalize();
     return 0;
 }
