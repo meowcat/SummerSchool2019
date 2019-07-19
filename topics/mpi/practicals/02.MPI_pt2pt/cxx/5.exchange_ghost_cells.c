@@ -59,6 +59,8 @@
 #define SUBDOMAIN 10
 #define DOMAINSIZE (SUBDOMAIN+2)
 
+#define MPI_B
+
 int main(int argc, char *argv[])
 {
     int rank, size, i, j, rank_bottom, rank_top;
@@ -93,23 +95,32 @@ int main(int argc, char *argv[])
     //  c) MPI_Sendrecv
 
 
-    //  to the top
-
-    // a)
-
-    // b)
-
-    // c)
 
     // Get data from top into sndbuf
     for(i = 0; i < SUBDOMAIN; i++)
     	sndbuf[i] = data[i+1];
+    //  to the top
 
+    // a)
+#ifdef MPI_A
+    MPI_Send(&sndbuf, SUBDOMAIN, MPI_DOUBLE, rank_top, 0, MPI_COMM_WORLD);
+    MPI_Irecv(&rcvbuf, SUBDOMAIN, MPI_DOUBLE, rank_bottom, 0, MPI_COMM_WORLD, &request);
+    MPI_Wait(&request, &status);
+#endif
+    // b)
+#ifdef MPI_B
+    MPI_Isend(&sndbuf, SUBDOMAIN, MPI_DOUBLE, rank_top, 0, MPI_COMM_WORLD, &request);
+    MPI_Recv(&rcvbuf, SUBDOMAIN, MPI_DOUBLE, rank_bottom, 0, MPI_COMM_WORLD, &status);
+    MPI_Wait(&request, &status);
+#endif
+    // c)
+#ifdef MPI_C
     MPI_Sendrecv(
     		&sndbuf, SUBDOMAIN, MPI_DOUBLE, rank_top, 0,
 			&rcvbuf, SUBDOMAIN, MPI_DOUBLE, rank_bottom, 0,
 			MPI_COMM_WORLD,  &status
     		);
+#endif
 
     // get data from btm into sndbuf, then replace data to top
     for(i = 0; i < SUBDOMAIN; i++) {
@@ -117,11 +128,25 @@ int main(int argc, char *argv[])
     	data[i+1 + (SUBDOMAIN+2)*(SUBDOMAIN+1)] = rcvbuf[i];
     }
 
+#ifdef MPI_A
+    MPI_Send(&sndbuf, SUBDOMAIN, MPI_DOUBLE, rank_bottom, 0, MPI_COMM_WORLD);
+    MPI_Irecv(&rcvbuf, SUBDOMAIN, MPI_DOUBLE, rank_top, 0, MPI_COMM_WORLD, &request);
+    MPI_Wait(&request, &status);
+#endif
+    // b)
+#ifdef MPI_B
+    MPI_Isend(&sndbuf, SUBDOMAIN, MPI_DOUBLE, rank_bottom, 0, MPI_COMM_WORLD, &request);
+    MPI_Recv(&rcvbuf, SUBDOMAIN, MPI_DOUBLE, rank_top, 0, MPI_COMM_WORLD, &status);
+    MPI_Wait(&request, &status);
+#endif
+    // c)
+#ifdef MPI_C
     MPI_Sendrecv(
-        		&sndbuf, SUBDOMAIN, MPI_DOUBLE, rank_bottom, 0,
-    			&rcvbuf, SUBDOMAIN, MPI_DOUBLE, rank_top, 0,
-				MPI_COMM_WORLD,  &status
-        		);
+    		&sndbuf, SUBDOMAIN, MPI_DOUBLE, rank_bottom, 0,
+			&rcvbuf, SUBDOMAIN, MPI_DOUBLE, rank_top, 0,
+			MPI_COMM_WORLD,  &status
+    		);
+#endif
 
     // get data from btm into sndbuf, then replace data to top
        for(i = 0; i < SUBDOMAIN; i++) {
