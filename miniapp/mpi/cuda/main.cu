@@ -155,6 +155,11 @@ int main(int argc, char* argv[])
     // initialize MPI
     int mpi_rank, mpi_size;
 
+    MPI_Init(&argc, &argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
+
+
     bool is_root = mpi_rank==0;
 
     // initialize subdomain
@@ -200,9 +205,9 @@ int main(int argc, char* argv[])
     // TODO: put unit tests here because:
     // * they can then use the buffers and fields allocated for the main application
     // * they won't interfere with the initial conditions, set below
-    if (!unit_tests()) {
-        return 1;
-    }
+//    if (!unit_tests()) {
+//        return 1;
+//    }
 
     // set dirichlet boundary conditions to 0 all around
     ss_fill(bndN, 0);
@@ -325,7 +330,7 @@ int main(int argc, char* argv[])
     if (is_root) std::cout << "Goodbye!" << std::endl;
 
     // clean windows, communicator and do finalize
-
+    MPI_Finalize();
     return 0;
 }
 

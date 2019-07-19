@@ -218,6 +218,7 @@ void exchange_rdma(data::Field const& U) {
     using data::buffN;
     using data::buffS;
 
+    using data::x_old;
 
     int nx = domain.nx;
     int ny = domain.ny;
@@ -260,16 +261,43 @@ void exchange_rdma(data::Field const& U) {
     // the diffusion() function, where it will fix the problem. Then get them to zero in on
     // exactly where it has to be placed.
 
+    int num_requests = 0;
+
+    MPI_Status status[8];
+    MPI_Request requests[8];
+
     cudaDeviceSynchronize();
 
     if(domain.neighbour_north>=0) {
+    	pack_buffer(U, buffN, 0, 0, 1);
+    	MPI_Isend(buffN.device_data(), nx, MPI_DOUBLE, domain.neighbour_north, 0,
+    			MPI_COMM_WORLD, &requests[num_requests++]);
+    	MPI_Irecv(bndN.device_data(), nx, MPI_DOUBLE, domain.neighbour_north, 0,
+    	    			MPI_COMM_WORLD, &requests[num_requests++]);
     }
     if(domain.neighbour_south>=0) {
+    	pack_buffer(x_old, buffS, ny-1, 0, 1);
+    	MPI_Isend(buffS.device_data(), nx, MPI_DOUBLE, domain.neighbour_south, 0,
+    			MPI_COMM_WORLD, &requests[num_requests++]);
+    	MPI_Irecv(bndS.device_data(), nx, MPI_DOUBLE, domain.neighbour_south, 0,
+    			MPI_COMM_WORLD, &requests[num_requests++]);
     }
     if(domain.neighbour_east>=0) {
+    	pack_buffer(x_old, buffE, 0, 0, ny);
+    	MPI_Isend(buffE.device_data(), nx, MPI_DOUBLE, domain.neighbour_east, 0,
+    			MPI_COMM_WORLD, &requests[num_requests++]);
+    	MPI_Irecv(bndE.device_data(), nx, MPI_DOUBLE, domain.neighbour_east, 0,
+    			MPI_COMM_WORLD, &requests[num_requests++]);
     }
     if(domain.neighbour_west>=0) {
+    	pack_buffer(x_old, buffW, nx-1, ny-1, ny);
+    	MPI_Isend(buffW.device_data(), nx, MPI_DOUBLE, domain.neighbour_west, 0,
+    			MPI_COMM_WORLD, &requests[num_requests++]);
+    	MPI_Irecv(bndW.device_data(), nx, MPI_DOUBLE, domain.neighbour_west, 0,
+    			MPI_COMM_WORLD, &requests[num_requests++]);
+
     }
+    MPI_Waitall(num_requests, requests, status);
 }
 
 // overlap communication by computation by splitting the exchange
@@ -293,6 +321,7 @@ void start_exchange_rdma(data::Field const& U, MPI_Request requests[], int& num_
     cudaDeviceSynchronize();
 
     if(domain.neighbour_north>=0) {
+
     }
     if(domain.neighbour_south>=0) {
     }
@@ -340,6 +369,7 @@ void diffusion(data::Field const& U, data::Field &S)
     }
 
     //do exchange
+    exchange_rdma(U);
 
     // apply stencil to the interior grid points
     auto calculate_grid_dim = [] (size_t n, size_t block_dim) {

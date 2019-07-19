@@ -173,6 +173,9 @@ double ss_dot(Field const& x, Field const& y)
             y.device_data(), 1,
             &result
         );
+    MPI_Allreduce(&result, &result_global,
+    		1, MPI_DOUBLE, MPI_SUM,
+			MPI_COMM_WORLD);
 
 
     return result_global;
@@ -196,9 +199,14 @@ double ss_norm2(Field const& x)
     // take the square of the result, because we still have to sum of the local
     // partial sums before taking sqrt of the full global sum
     result *= result;
+    MPI_Allreduce(&result, &result_global,
+        		1, MPI_DOUBLE, MPI_SUM,
+    			MPI_COMM_WORLD);
+    result_global = sqrt(result_global);
+    return(result_global);
 
 
-    return sqrt(result_global);
+    //return sqrt(result_global);
 }
 
 // sets entries in a vector to value
