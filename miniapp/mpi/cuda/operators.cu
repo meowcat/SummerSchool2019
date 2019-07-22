@@ -201,7 +201,6 @@ void pack_buffer(data::Field const& from, data::Field &buffer, int startx, int s
         std::cerr << "error : cublas copy for boundary condition" << std::endl;
         exit(-1);
     }
-    cudaDeviceSynchronize();
 }
 
 // Exchange that performs MPI send/recv from/to host memory, and copies
@@ -299,7 +298,6 @@ void exchange_rdma(data::Field const& U) {
 
     }
     MPI_Waitall(num_requests, requests, status);
-    cudaDeviceSynchronize();
 }
 
 // overlap communication by computation by splitting the exchange
