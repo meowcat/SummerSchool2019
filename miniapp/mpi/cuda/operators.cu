@@ -201,6 +201,7 @@ void pack_buffer(data::Field const& from, data::Field &buffer, int startx, int s
         std::cerr << "error : cublas copy for boundary condition" << std::endl;
         exit(-1);
     }
+    cudaDeviceSynchronize();
 }
 
 // Exchange that performs MPI send/recv from/to host memory, and copies
@@ -269,35 +270,36 @@ void exchange_rdma(data::Field const& U) {
     cudaDeviceSynchronize();
 
     if(domain.neighbour_north>=0) {
-    	pack_buffer(U, buffN, 0, 0, 1);
+    	pack_buffer(U, buffN, 0, ny-1, 1);
     	MPI_Isend(buffN.device_data(), nx, MPI_DOUBLE, domain.neighbour_north, 0,
     			MPI_COMM_WORLD, &requests[num_requests++]);
-    	MPI_Irecv(bndN.device_data(), nx, MPI_DOUBLE, domain.neighbour_north, 0,
+    	MPI_Irecv(bndN.device_data(), nx, MPI_DOUBLE, domain.neighbour_north, 1,
     	    			MPI_COMM_WORLD, &requests[num_requests++]);
     }
     if(domain.neighbour_south>=0) {
-    	pack_buffer(x_old, buffS, ny-1, 0, 1);
-    	MPI_Isend(buffS.device_data(), nx, MPI_DOUBLE, domain.neighbour_south, 0,
+    	pack_buffer(U, buffS, 0, 0, 1);
+    	MPI_Isend(buffS.device_data(), nx, MPI_DOUBLE, domain.neighbour_south, 1,
     			MPI_COMM_WORLD, &requests[num_requests++]);
     	MPI_Irecv(bndS.device_data(), nx, MPI_DOUBLE, domain.neighbour_south, 0,
     			MPI_COMM_WORLD, &requests[num_requests++]);
     }
     if(domain.neighbour_east>=0) {
-    	pack_buffer(x_old, buffE, 0, 0, ny);
-    	MPI_Isend(buffE.device_data(), nx, MPI_DOUBLE, domain.neighbour_east, 0,
+    	pack_buffer(U, buffE, nx-1, 0, nx);
+    	MPI_Isend(buffE.device_data(), ny, MPI_DOUBLE, domain.neighbour_east, 2,
     			MPI_COMM_WORLD, &requests[num_requests++]);
-    	MPI_Irecv(bndE.device_data(), nx, MPI_DOUBLE, domain.neighbour_east, 0,
+    	MPI_Irecv(bndE.device_data(), ny, MPI_DOUBLE, domain.neighbour_east, 3,
     			MPI_COMM_WORLD, &requests[num_requests++]);
     }
     if(domain.neighbour_west>=0) {
-    	pack_buffer(x_old, buffW, nx-1, ny-1, ny);
-    	MPI_Isend(buffW.device_data(), nx, MPI_DOUBLE, domain.neighbour_west, 0,
+    	pack_buffer(U, buffW, 0, 0, nx);
+    	MPI_Isend(buffW.device_data(), ny, MPI_DOUBLE, domain.neighbour_west, 3,
     			MPI_COMM_WORLD, &requests[num_requests++]);
-    	MPI_Irecv(bndW.device_data(), nx, MPI_DOUBLE, domain.neighbour_west, 0,
+    	MPI_Irecv(bndW.device_data(), ny, MPI_DOUBLE, domain.neighbour_west, 2,
     			MPI_COMM_WORLD, &requests[num_requests++]);
 
     }
     MPI_Waitall(num_requests, requests, status);
+    cudaDeviceSynchronize();
 }
 
 // overlap communication by computation by splitting the exchange

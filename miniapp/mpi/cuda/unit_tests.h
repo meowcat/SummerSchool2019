@@ -59,6 +59,7 @@ bool test_exchange_rank() {
 
     // call exchange
     exchange_rdma(x_old);
+    cudaDeviceSynchronize();
 
     // copy gpu buffers to the host
     bndN.update_host();
@@ -81,6 +82,11 @@ bool test_exchange_rank() {
 
         return global_reduce(success);
     };
+
+    test(domain.neighbour_north, bndN, "north");
+    test(domain.neighbour_east,  bndE, "east");
+    test(domain.neighbour_south, bndS, "south");
+    test(domain.neighbour_west,  bndW, "west");
 
     if (!test(domain.neighbour_north, bndN, "north")) return false;
     if (!test(domain.neighbour_east,  bndE, "east"))  return false;

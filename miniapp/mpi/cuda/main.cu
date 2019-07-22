@@ -208,6 +208,7 @@ int main(int argc, char* argv[])
 //    if (!unit_tests()) {
 //        return 1;
 //    }
+    unit_tests();
 
     // set dirichlet boundary conditions to 0 all around
     ss_fill(bndN, 0);
